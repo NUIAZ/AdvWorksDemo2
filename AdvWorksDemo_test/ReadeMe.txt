@@ -1,0 +1,87 @@
+**
+-- Read Me -- https://en.wikipedia.org/wiki/README
+**
+
+Welcome, this read me file is for the next step after basic use of data tools in Visual Studio 2022. This is a quick video series where you can learn how to connect, modify and create data in SQL Server in VS. 
+
+Assumption are that you have installed:
+
+SQL Server 
+Visual Studio 2022 
+
+This is a beginer video where we walk through some code and get some data to display.
+
+
+Microsoft.Data.SqlClient: https://learn.microsoft.com/en-us/sql/connect/ado-net/introduction-microsoft-data-sqlclient-namespace?view=sql-server-ver16
+
+https://learn.microsoft.com/en-us/sql/relational-databases/stored-procedures/specify-parameters?view=sql-server-ver16
+
+Try/Catch
+https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/statements/exception-handling-statements
+
+Expand your skills: 
+1. Add try /catch to the sql insert statement.
+2. Create a new class that gets and displays the audit data. 
+   Try to add it via a method first, then create a new class and call it to do the select.
+
+https://learn.microsoft.com/en-us/sql/t-sql/language-elements/try-catch-transact-sql?view=sql-server-ver16
+
+https://learn.microsoft.com/en-us/sql/relational-databases/stored-procedures/create-a-stored-procedure?view=sql-server-ver16
+
+
+GO
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+-- =============================================
+-- Author:      
+-- Create Date: 
+-- Description: Insert using try/catch - along with a transaction.
+--
+-- LINK: https://stackoverflow.com/questions/23056973/tsql-try-catch-within-transaction-or-vice-versa
+-- LINK: https://dba.stackexchange.com/questions/31279/transaction-and-try-catch-in-sql-server-job
+-- =============================================
+
+CREATE PROCEDURE [dbo].[INSERT_SAMPLE]
+	@param_sample varchar(75),
+	
+AS
+
+SET XACT_ABORT, NOCOUNT ON
+
+begin try
+
+	-- Declare error variables
+	declare @ERRORMESSAGE2 nvarchar(4000)
+		   ,@ERRORSEVERITY int
+		   ,@ERRORSTATE int
+		   ,@ERRORPROCEDURE nvarchar(128)
+		   ,@ERRORLINE int
+		   ,@ERRORNUMBER int
+		   ,@ErrMsg nvarchar(4000)
+
+	begin transaction
+
+		-- YOUR CODE GOES HERE -- 
+
+	commit
+
+	-- Return a zero signifying a successful procedure execution
+	return 0
+end try
+begin catch
+    -- Rollback only for active transaction(s)
+    if (select @@TRANCOUNT) > 0 rollback
+
+    select @ERRORMESSAGE2 = ERROR_MESSAGE(), @ERRORSEVERITY = ERROR_SEVERITY() ,@ERRORSTATE = ERROR_STATE() 
+          ,@ERRORPROCEDURE = ERROR_PROCEDURE() ,@ERRORLINE = ERROR_LINE() ,@ERRORNUMBER = ERROR_NUMBER()
+
+	-- Set the @ErrMsg value and invoke raiserror
+    set @ErrMsg = @ERRORMESSAGE2 + N' ErrorProcedure:' + @ERRORPROCEDURE + N' ErrorLine:' + convert(nvarchar(12),@ERRORLINE) + N' ' 
+	raiserror(@ErrMsg ,@ERRORSEVERITY ,@ERRORSTATE)
+
+    -- Return a non-zero value signifying a failed procedure execution
+	return 1
+end catch
